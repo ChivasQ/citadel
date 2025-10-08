@@ -12,7 +12,7 @@ class Level:
         self.player = Player((100,100), [self.sprites])
 
 
-    def update(self):
-        self.player.tick()
+    def update(self, dt):
+        self.player.tick(dt)
         self.sprites.draw(self.display_surface)
         self.sprites.update()

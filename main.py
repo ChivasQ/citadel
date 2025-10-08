@@ -1,4 +1,5 @@
 import pygame
+from pygame import RESIZABLE
 from pygame.locals import DOUBLEBUF, OPENGL
 import imgui
 from imgui.integrations.pygame import PygameRenderer
@@ -8,39 +9,48 @@ from Debug import debug_text
 from Level import Level
 
 
+
+
+
 class Game:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((800,500))
+        self.screen = pygame.display.set_mode((800,500), RESIZABLE)
         self.level = Level(self.screen)
+
         pygame.display.set_caption("game")
         self.clock = pygame.time.Clock()
 
+    def close(self):
+        pass
+
     def run(self):
         isRunning = True
+        dt = 0.0
         while isRunning:
+            self.update(dt)
+            dt = self.clock.tick(0) / 1000 #divide by 1024, by bit shifting
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     isRunning = False
-                    # onExit()
-                    return
+                    self.close()
 
-            self.update()
+
+
 
     def start_frame(self):
         self.screen.fill("blue")
 
     def end_frame(self):
         pygame.display.update()
-        self.clock.tick(0)
 
-    def update(self):
+    def update(self, dt):
         self.start_frame()
 
-        self.level.update()
-        debug_text(f'FPS: {round(self.clock.get_fps(), 1)}')
-
+        self.level.update(dt)
+        debug_text(f'FPS: {round(self.clock.get_fps(), 1)} DT: {dt}')
 
         self.end_frame()
 

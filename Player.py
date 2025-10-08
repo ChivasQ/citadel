@@ -11,26 +11,26 @@ class Player(pygame.sprite.Sprite):
         self.pos = pos
         self.rect = self.image.get_rect(center=pos)
 
-        self.speed = 0.1
+        self.speed = 300 # pixels per second(I think so)
         self.direction = pygame.math.Vector2()
         self.angle = 0
 
     def input(self):
         keys = pygame.key.get_pressed()
+        self.direction.y = 0
+        self.direction.x = 0
 
         if keys[pygame.K_UP]:
-            self.direction.y = -1
-        elif keys[pygame.K_DOWN]:
-            self.direction.y = 1
-        else:
-            self.direction.y = 0
-
+            self.direction.y += -1
+        if keys[pygame.K_DOWN]:
+            self.direction.y += 1
         if keys[pygame.K_RIGHT]:
-            self.direction.x = 1
-        elif keys[pygame.K_LEFT]:
-            self.direction.x = -1
-        else:
-            self.direction.x = 0
+            self.direction.x += 1
+        if keys[pygame.K_LEFT]:
+            self.direction.x += -1
+
+
+
 
     def player_rotate(self):
         if self.direction.length_squared() > 0:
@@ -39,13 +39,13 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
-    def move(self):
-        self.pos += self.direction * self.speed # TODO: add delta time
+    def move(self, dt):
+        self.pos += self.direction * self.speed * dt # TODO: add delta time
         self.rect.center = self.pos
-        debug_text(self.direction * self.speed, 5, 40)
-        debug_text(self.pos, 5, 70)
+        debug_text(f'DIR:{self.direction}', 10, 40)
+        debug_text(f'POS:{self.pos}', 10, 70)
 
-    def tick(self):
+    def tick(self, dt):
         self.input()
         self.player_rotate()
-        self.move()
+        self.move(dt)
