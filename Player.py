@@ -7,6 +7,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups):
         super().__init__(groups)
         self.original_image = pygame.image.load("resources/textures/player.png").convert_alpha()
+
         self.image = self.original_image
         self.pos = pos
         self.rect = self.image.get_rect(center=pos)
