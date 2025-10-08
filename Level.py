@@ -1,11 +1,18 @@
 import pygame.sprite
 
+from Player import Player
+
 
 class Level:
     def __init__(self, screen):
         self.display_surface = screen
-        self.floor_sprites = pygame.sprite.Group()
+        self.sprites = pygame.sprite.Group()
         self.wall_sprites = pygame.sprite.Group()
 
+        self.player = Player((100,100), [self.sprites])
+
+
     def update(self):
-        pass
+        self.player.tick()
+        self.sprites.draw(self.display_surface)
+        self.sprites.update()

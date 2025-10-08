@@ -23,6 +23,9 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     isRunning = False
+                    # onExit()
+                    return
+
             self.update()
 
     def start_frame(self):
