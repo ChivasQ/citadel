@@ -27,14 +27,19 @@ class Game:
         isRunning = True
         dt = 0.0
         while isRunning:
-            self.update(dt)
-            dt = self.clock.tick(0) / 1000 #divide by 1024, by bit shifting
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     isRunning = False
                     self.close()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:  # 1 - left button
+                        self.level.place_building()
+
+            self.update(dt)
+            dt = self.clock.tick(0) / 1000
+
+
 
 
 

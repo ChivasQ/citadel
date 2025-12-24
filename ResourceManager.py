@@ -6,7 +6,7 @@ class ResourceManager:
         self.textures = {}
 
     def get_texture(self, path, size=None):
-        # Ключ кешу включає шлях і розмір, щоб не масштабувати повторно
+        # Ключ кешу включає шлях і розмір, щоб не масштабувати повторно, це доволі дорого d=====(￣▽￣*)b
         cache_key = (path, size)
 
         if cache_key in self.textures:

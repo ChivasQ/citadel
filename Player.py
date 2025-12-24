@@ -4,9 +4,10 @@ from Debug import debug_text
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups):
+    def __init__(self, pos, groups, resource_manager):
         super().__init__(groups)
-        self.original_image = pygame.transform.scale(pygame.image.load("resources/textures/player.png").convert_alpha(), (64,68))
+
+        self.original_image = resource_manager.get_texture("resources/textures/player.png", (64, 68)).convert_alpha()
 
         self.image = self.original_image
         self.pos = pos
