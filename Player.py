@@ -6,7 +6,7 @@ from Debug import debug_text
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups):
         super().__init__(groups)
-        self.original_image = pygame.image.load("resources/textures/player.png").convert_alpha()
+        self.original_image = pygame.transform.scale(pygame.image.load("resources/textures/player.png").convert_alpha(), (64,68))
 
         self.image = self.original_image
         self.pos = pos
@@ -41,6 +41,9 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def move(self, dt):
+        if self.direction.length_squared() > 0:
+            self.direction = self.direction.normalize()
+
         self.pos += self.direction * self.speed * dt # TODO: add delta time
         self.rect.center = self.pos
         debug_text(f'DIR:{self.direction}', 10, 40)

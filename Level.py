@@ -16,10 +16,16 @@ class Level:
         self.load_map()
 
     def load_map(self):
-        TILE_SIZE = 64
+        TILE_SIZE = 32
         tile_textures = {
-            "1": pygame.image.load("resources/textures/tiles/wall.png"),
-            "0": pygame.image.load("resources/textures/tiles/grass.png"),
+            "1": pygame.transform.scale(
+                pygame.image.load("resources/textures/tiles/wall.png"),
+                (TILE_SIZE, TILE_SIZE)
+            ),
+            "0": pygame.transform.scale(
+                pygame.image.load("resources/textures/tiles/grass.png"),
+                (TILE_SIZE, TILE_SIZE)
+            ),
         }
 
         level_map = [
