@@ -7,16 +7,15 @@ from OpenGL.GL import *
 
 from Debug import debug_text
 from Level import Level
-
-
-
+from ResourceManager import ResourceManager
 
 
 class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((800,500), RESIZABLE)
-        self.level = Level(self.screen)
+        self.resource_manager = ResourceManager()
+        self.level = Level(self.screen, self.resource_manager)
 
         pygame.display.set_caption("game")
         self.clock = pygame.time.Clock()
