@@ -12,6 +12,8 @@ from Building import Building
 from Conveyor import Conveyor
 from Furnace import Furnace
 from Inspector import Inspector
+from Core import Core
+
 
 class Level:
     def __init__(self, screen, resource_manager):
@@ -44,9 +46,13 @@ class Level:
             'coal': self.rm.get_texture("resources/textures/item/coal.png"),
             'copper_ingot': self.rm.get_texture("resources/textures/item/copper_ingot.png")
         }
-        self.inventory = {'iron': 0, 'copper': 0, 'coal':0}
 
-        self.build_mode = 0  # 0: Wall, 1: Miner, 2: Conveyor
+        # Текстура ядра 96x96 (3x3 клітинки)
+        self.core_tex = self.rm.get_texture("resources/textures/tiles/core.png", (96, 96))
+
+        self.inventory = {'iron': 0, 'copper': 0, 'coal': 0, 'copper_ingot': 0}
+
+        self.build_mode = 0  # 0: Wall, 1: Miner, 2: Conveyor, 3: Furnace
         self.current_rotation = 0  # 0: Right, 1: Down, 2: Left, 3: Up
 
         # UI
@@ -55,21 +61,24 @@ class Level:
 
         self.load_map()
 
-
     def load_map(self):
+        # Генерація руди
         ores = ['coal', 'copper']
+
         def get_ore(i):
             if i < len(ores):
                 return ores[i]
-            else: None
-        # 0 - Камінь, 1 - Трава
-        self.ground_data = [[0 for x in range(32)] for y in range(32)]
+            else:
+                return None
 
-        self.ore_data = [[get_ore(randint(0,5)) for x in range(32)] for y in range(32)]
+        # Генерація масивів (32x32)
+        self.ground_data = [[0 for x in range(32)] for y in range(32)]
+        self.ore_data = [[get_ore(randint(0, 5)) for x in range(32)] for y in range(32)]
 
         self.map_width = len(self.ground_data[0])
         self.map_height = len(self.ground_data)
 
+        # Текстури
         ground_textures = {
             0: self.rm.get_texture("resources/textures/tiles/grass.png", (32, 32)),
             1: self.rm.get_texture("resources/textures/tiles/stone.png", (32, 32))
@@ -81,6 +90,7 @@ class Level:
             'coal': self.rm.get_texture("resources/textures/tiles/coal_ore.png", (32, 32))
         }
 
+        # Створення тайлів (візуалізація)
         for y in range(self.map_height):
             for x in range(self.map_width):
                 pos = (x * self.TILE_SIZE + self.OFFSET.x, y * self.TILE_SIZE + self.OFFSET.y)
@@ -94,6 +104,25 @@ class Level:
                 if ore_type in ore_textures:
                     Tile(pos, [self.ore_group], ore_textures[ore_type])
 
+        core_gx, core_gy = 15, 15
+        core_size = 3
+
+        # Позиція в пікселях
+        core_pos_x = core_gx * self.TILE_SIZE + self.OFFSET.x
+        core_pos_y = core_gy * self.TILE_SIZE + self.OFFSET.y
+
+        core_building = Core(
+            (core_pos_x, core_pos_y),
+            (core_gx, core_gy),
+            [self.buildings_group],
+            self.core_tex,
+            self
+        )
+
+        for y in range(core_size):
+            for x in range(core_size):
+                self.world_data[(core_gx + x, core_gy + y)] = core_building
+
         print("Map loaded successfully")
 
     def get_grid_pos(self):
@@ -104,9 +133,6 @@ class Level:
 
     def rotate_building(self):
         self.current_rotation = (self.current_rotation + 1) % 4
-
-        gx, gy = self.get_grid_pos()
-
         print(f"Rotation: {self.current_rotation}")
 
     def destroy_building(self):
@@ -115,11 +141,21 @@ class Level:
         if (gx, gy) in self.world_data:
             building = self.world_data[(gx, gy)]
 
+            if isinstance(building, Core):
+                return
+
+            if hasattr(building, 'size') and building.size > 1:
+                start_gx, start_gy = building.grid_pos
+                for y in range(building.size):
+                    for x in range(building.size):
+                        target = (start_gx + x, start_gy + y)
+                        if target in self.world_data:
+                            del self.world_data[target]
+            else:
+                del self.world_data[(gx, gy)]
+
             # Видаляємо візуально
             building.kill()
-
-            del self.world_data[(gx, gy)]
-
             print(f"Destroyed building at {gx, gy}")
 
     def place_building(self):
