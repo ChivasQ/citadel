@@ -10,7 +10,8 @@ from Player import Player
 from Tile import Tile
 from Building import Building
 from Conveyor import Conveyor
-
+from Furnace import Furnace
+from Inspector import Inspector
 
 class Level:
     def __init__(self, screen, resource_manager):
@@ -26,6 +27,8 @@ class Level:
         self.items_group = pygame.sprite.Group()  # Предмети на конвеєрах
         self.entities = pygame.sprite.Group()  # Гравець
 
+        self.inspector = Inspector()
+
         # Дані карти
         self.ground_data = []
         self.ore_data = []
@@ -39,6 +42,7 @@ class Level:
             'iron': self.rm.get_texture("resources/textures/item/raw_iron.png"),
             'copper': self.rm.get_texture("resources/textures/item/raw_copper.png"),
             'coal': self.rm.get_texture("resources/textures/item/coal.png"),
+            'copper_ingot': self.rm.get_texture("resources/textures/item/copper_ingot.png")
         }
         self.inventory = {'iron': 0, 'copper': 0, 'coal':0}
 
@@ -153,6 +157,9 @@ class Level:
                 self.current_rotation,
                 self
             )
+        elif self.build_mode == 3:  # Furnace
+            tex = self.rm.get_texture("resources/textures/tiles/furnace.png", (32, 32))
+            new_building = Furnace((pos_x, pos_y), (gx, gy), [self.buildings_group], tex, self)
 
         # Реєстрація будівлі
         if new_building:
@@ -169,6 +176,12 @@ class Level:
             world_x = gx * self.TILE_SIZE + self.OFFSET.x
             world_y = gy * self.TILE_SIZE + self.OFFSET.y
             self.display_surface.blit(self.hover_surf, (world_x, world_y))
+
+            building = self.world_data.get((gx, gy))
+
+            if building:
+                mouse_pos = pygame.mouse.get_pos()
+                self.inspector.draw(self.display_surface, mouse_pos, building)
 
     def update(self, dt):
         self.player.tick(dt)

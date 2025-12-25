@@ -6,6 +6,7 @@ from imgui.integrations.pygame import PygameRenderer
 from OpenGL.GL import *
 
 from Debug import debug_text
+from Debug import render
 from Level import Level
 from ResourceManager import ResourceManager
 
@@ -41,6 +42,7 @@ class Game:
                     if event.key == pygame.K_1: self.level.build_mode = 0  # Wall
                     if event.key == pygame.K_2: self.level.build_mode = 1  # Miner
                     if event.key == pygame.K_3: self.level.build_mode = 2  # Conveyor
+                    if event.key == pygame.K_4: self.level.build_mode = 3  # Furnace
 
                     if event.key == pygame.K_r:  # Rotate
                         self.level.rotate_building()
@@ -64,6 +66,7 @@ class Game:
 
         self.level.update(dt)
         debug_text(f'FPS: {round(self.clock.get_fps(), 1)} DT: {dt}')
+        render()
 
         self.end_frame()
 

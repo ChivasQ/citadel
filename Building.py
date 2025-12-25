@@ -7,8 +7,14 @@ class Building(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=pos)
         self.grid_pos = grid_pos
         self.health = health
+        self.max_health = health
 
     def take_damage(self, amount):
         self.health -= amount
         if self.health <= 0:
             self.kill()
+
+    def get_info(self):
+        return [
+            f"Health: {self.health}/{self.max_health}"
+        ]
