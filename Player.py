@@ -7,7 +7,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups, resource_manager):
         super().__init__(groups)
 
-        self.original_image = resource_manager.get_texture("resources/textures/player.png", (64, 68)).convert_alpha()
+        self.original_image = resource_manager.get_texture("resources/textures/player.png", (32, 34)).convert_alpha()
 
         self.image = self.original_image
         self.pos = pos
@@ -45,7 +45,7 @@ class Player(pygame.sprite.Sprite):
         if self.direction.length_squared() > 0:
             self.direction = self.direction.normalize()
 
-        self.pos += self.direction * self.speed * dt # TODO: add delta time
+        self.pos += self.direction * self.speed * dt
         self.rect.center = self.pos
         debug_text(f'DIR:{self.direction}', 10, 40)
         debug_text(f'POS:{self.pos}', 10, 70)

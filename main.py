@@ -35,6 +35,15 @@ class Game:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:  # 1 - left button
                         self.level.place_building()
+                    if event.button == pygame.BUTTON_RIGHT:
+                        self.level.destroy_building()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_1: self.level.build_mode = 0  # Wall
+                    if event.key == pygame.K_2: self.level.build_mode = 1  # Miner
+                    if event.key == pygame.K_3: self.level.build_mode = 2  # Conveyor
+
+                    if event.key == pygame.K_r:  # Rotate
+                        self.level.rotate_building()
 
             self.update(dt)
             dt = self.clock.tick(0) / 1000
