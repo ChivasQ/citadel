@@ -1,10 +1,13 @@
+import math
 import random
 from random import randint
 
 import pygame
 import noise
 import numpy as np
+from pygame.display import update
 
+from CameraGroup import CameraGroup
 from Enemy import Enemy
 from Item import Item
 from Miner import Miner
@@ -15,6 +18,8 @@ from Conveyor import Conveyor
 from Furnace import Furnace
 from Inspector import Inspector
 from Core import Core
+from Turret import Turret
+
 
 class Level:
     def __init__(self, screen, resource_manager):
@@ -24,11 +29,14 @@ class Level:
         self.TILE_SIZE = 32
         self.OFFSET = pygame.math.Vector2(0, 0)
 
-        self.background = pygame.sprite.Group()  # Background
-        self.ore_group = pygame.sprite.Group()  # Руда
-        self.buildings_group = pygame.sprite.Group()  # Buildings
-        self.items_group = pygame.sprite.Group()  # Предмети на конвеєрах
-        self.entities = pygame.sprite.Group()  # Ентіті
+        self.half_w = self.display_surface.get_size()[0] // 2
+        self.half_h = self.display_surface.get_size()[1] // 2
+
+        self.background = CameraGroup()  # Background
+        self.ore_group = CameraGroup()  # Руда
+        self.buildings_group = CameraGroup()  # Buildings
+        self.items_group = CameraGroup()  # Предмети на конвеєрах
+        self.entities = CameraGroup()  # Ентіті
 
         self.inspector = Inspector()
 
@@ -48,9 +56,10 @@ class Level:
             'copper_ingot': self.rm.get_texture("resources/textures/item/copper_ingot.png")
         }
 
-        # Текстура ядра 96x96 (3x3 клітинки)
         self.core_tex = self.rm.get_texture("resources/textures/tiles/core.png", (96, 96))
         self.enemy_tex = self.rm.get_texture("resources/textures/enemy.png", (32, 32))
+        self.turret_tex_base = self.rm.get_texture("resources/textures/tiles/turret.png", (32, 32))
+        self.turret_tex_turret = self.rm.get_texture("resources/textures/tiles/turret_head.png", (32, 32))
         self.core_center_pos = (0, 0)
         self.inventory = {'iron': 0, 'copper': 0, 'coal': 0, 'copper_ingot': 0}
 
@@ -62,6 +71,25 @@ class Level:
         pygame.draw.rect(self.hover_surf, (255, 255, 255, 100), (0, 0, self.TILE_SIZE, self.TILE_SIZE), 2)
 
         self.load_map()
+
+    def update_camera(self):
+        camera_center_x = self.OFFSET.x + self.half_w
+        camera_center_y = self.OFFSET.y + self.half_h
+
+        diff_x = self.player.rect.centerx - camera_center_x
+        diff_y = self.player.rect.centery - camera_center_y
+
+        distance = math.hypot(diff_x, diff_y)
+
+        if distance > 50:
+
+            move_distance = distance - 50
+
+            shift_x = (diff_x / distance) * move_distance
+            shift_y = (diff_y / distance) * move_distance
+
+            self.OFFSET.x += shift_x
+            self.OFFSET.y += shift_y
 
     def load_map(self):
         # Генерація руди
@@ -95,7 +123,7 @@ class Level:
         # Створення тайлів
         for y in range(self.map_height):
             for x in range(self.map_width):
-                pos = (x * self.TILE_SIZE + self.OFFSET.x, y * self.TILE_SIZE + self.OFFSET.y)
+                pos = (x * self.TILE_SIZE, y * self.TILE_SIZE)
 
                 # Земля
                 ground_type = self.ground_data[y][x]
@@ -110,8 +138,8 @@ class Level:
         core_size = 3
 
         # Позиція в пікселях
-        core_pos_x = core_gx * self.TILE_SIZE + self.OFFSET.x
-        core_pos_y = core_gy * self.TILE_SIZE + self.OFFSET.y
+        core_pos_x = core_gx * self.TILE_SIZE
+        core_pos_y = core_gy * self.TILE_SIZE
         self.core_center_pos = (core_pos_x, core_pos_y)
         core_building = Core(
             (core_pos_x, core_pos_y),
@@ -127,16 +155,16 @@ class Level:
 
         print("Map loaded successfully")
 
-        self.spawnEnemy()
 
     def spawnEnemy(self):
-        Enemy((0, 0), [self.entities], self.core_center_pos, self.enemy_tex, self)
         Enemy((-50, -50), [self.entities], self.core_center_pos, self.enemy_tex, self)
 
     def get_grid_pos(self):
         mouse_pos = pygame.mouse.get_pos()
-        gx = int((mouse_pos[0] - self.OFFSET.x) // self.TILE_SIZE)
-        gy = int((mouse_pos[1] - self.OFFSET.y) // self.TILE_SIZE)
+        world_mouse_x = mouse_pos[0] + self.OFFSET.x
+        world_mouse_y = mouse_pos[1] + self.OFFSET.y
+        gx = int(world_mouse_x // self.TILE_SIZE)
+        gy = int(world_mouse_y // self.TILE_SIZE)
         return gx, gy
 
     def rotate_building(self):
@@ -173,11 +201,10 @@ class Level:
             return
 
         if (gx, gy) in self.world_data:
-            print("Cell occupied")
             return
 
-        pos_x = gx * self.TILE_SIZE + self.OFFSET.x
-        pos_y = gy * self.TILE_SIZE + self.OFFSET.y
+        pos_x = gx * self.TILE_SIZE
+        pos_y = gy * self.TILE_SIZE
         new_building = None
 
         # Логіка вибору будівлі
@@ -204,6 +231,9 @@ class Level:
         elif self.build_mode == 3:  # Furnace
             tex = self.rm.get_texture("resources/textures/tiles/furnace.png", (32, 32))
             new_building = Furnace((pos_x, pos_y), (gx, gy), [self.buildings_group], tex, self)
+        elif self.build_mode == 4:  # Turret
+            # Турель 1x1, як стіна
+            new_building = Turret((pos_x, pos_y), (gx, gy), [self.buildings_group], self.turret_tex_base, self.turret_tex_turret, self)
 
         # Реєстрація будівлі
         if new_building:
@@ -217,8 +247,8 @@ class Level:
     def draw_hover(self):
         gx, gy = self.get_grid_pos()
         if 0 <= gx < self.map_width and 0 <= gy < self.map_height:
-            world_x = gx * self.TILE_SIZE + self.OFFSET.x
-            world_y = gy * self.TILE_SIZE + self.OFFSET.y
+            world_x = gx * self.TILE_SIZE - self.OFFSET.x
+            world_y = gy * self.TILE_SIZE - self.OFFSET.y
             self.display_surface.blit(self.hover_surf, (world_x, world_y))
 
             building = self.world_data.get((gx, gy))
@@ -234,10 +264,12 @@ class Level:
         self.items_group.update(dt)
         self.entities.update(dt)
 
-        self.background.draw(self.display_surface)  # Земля
-        self.ore_group.draw(self.display_surface)  # Руда
-        self.buildings_group.draw(self.display_surface)  # Будівлі
-        self.items_group.draw(self.display_surface)  # Предмети (мають бути НАД будівлями)
-        self.entities.draw(self.display_surface)  # Гравець
+        self.update_camera()
+
+        self.background.custom_draw(self.OFFSET)  # Земля
+        self.ore_group.custom_draw(self.OFFSET)  # Руда
+        self.buildings_group.custom_draw(self.OFFSET)  # Будівлі
+        self.items_group.custom_draw(self.OFFSET)  # Предмети
+        self.entities.custom_draw(self.OFFSET)  # Гравець
 
         self.draw_hover()  # Курсор

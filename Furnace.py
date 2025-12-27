@@ -8,22 +8,18 @@ class Furnace(Building):
         super().__init__(pos, grid_pos, groups, image)
         self.level = level_ref
 
-        # Внутрішній склад
         self.inventory = {'coal': 0, 'copper': 0}
-        self.max_capacity = 10  # Максимум 10 одиниць кожного ресурсу
+        self.max_capacity = 10
 
-        # Вихідний склад
         self.output_item_type = None
 
         self.timer = 0
         self.process_time = 2.0
 
     def accept_item(self, item):
-        # Якщо вже є готовий продукт, який не вивантажили - не приймаємо нові
         if self.output_item_type is not None:
             return False
 
-        # Перевіряємо тип і місце в інвентарі
         item_type = item.item_type
 
         if item_type in self.inventory:
@@ -36,13 +32,11 @@ class Furnace(Building):
         return False
 
     def update(self, dt):
-        # Логіка вивантаження
         if self.output_item_type:
             if self.try_output():
                 self.output_item_type = None  # Очистили вихід
 
-        # 2. Логіка переплавки (Crafting Logic)
-        # Рецепт: 1 вугілля + 1 мідь = 1 мідний злиток
+        # 1 вугілля + 1 мідь = 1 мідний злиток
         elif self.inventory['coal'] >= 1 and self.inventory['copper'] >= 1:
             self.timer += dt
             if self.timer >= self.process_time:
@@ -50,10 +44,10 @@ class Furnace(Building):
                 self.timer = 0
 
     def craft(self):
-        # Споживаємо ресурси
+
         self.inventory['coal'] -= 1
         self.inventory['copper'] -= 1
-        # Створюємо результат (поки що віртуально)
+
         self.output_item_type = 'copper_ingot'
         print("Crafted Copper Ingot!")
 

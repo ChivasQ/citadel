@@ -5,8 +5,8 @@ import imgui
 from imgui.integrations.pygame import PygameRenderer
 from OpenGL.GL import *
 
-from Debug import debug_text
-from Debug import render
+from Debug import debug_text, renderLines
+from Debug import renderDebugText
 from Level import Level
 from ResourceManager import ResourceManager
 
@@ -43,6 +43,9 @@ class Game:
                     if event.key == pygame.K_2: self.level.build_mode = 1  # Miner
                     if event.key == pygame.K_3: self.level.build_mode = 2  # Conveyor
                     if event.key == pygame.K_4: self.level.build_mode = 3  # Furnace
+                    if event.key == pygame.K_5: self.level.build_mode = 4  # Turret
+
+                    if event.key == pygame.K_p: self.level.spawnEnemy()
 
                     if event.key == pygame.K_r:  # Rotate
                         self.level.rotate_building()
@@ -61,13 +64,14 @@ class Game:
     def end_frame(self):
         pygame.display.update()
 
+
     def update(self, dt):
         self.start_frame()
 
         self.level.update(dt)
         debug_text(f'FPS: {round(self.clock.get_fps(), 1)} DT: {dt}')
-        render()
-
+        renderDebugText()
+        renderLines(self.level.OFFSET)
         self.end_frame()
 
 
