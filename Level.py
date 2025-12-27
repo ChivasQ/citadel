@@ -4,6 +4,8 @@ from random import randint
 import pygame
 import noise
 import numpy as np
+
+from Enemy import Enemy
 from Item import Item
 from Miner import Miner
 from Player import Player
@@ -13,7 +15,6 @@ from Conveyor import Conveyor
 from Furnace import Furnace
 from Inspector import Inspector
 from Core import Core
-
 
 class Level:
     def __init__(self, screen, resource_manager):
@@ -27,7 +28,7 @@ class Level:
         self.ore_group = pygame.sprite.Group()  # Руда
         self.buildings_group = pygame.sprite.Group()  # Buildings
         self.items_group = pygame.sprite.Group()  # Предмети на конвеєрах
-        self.entities = pygame.sprite.Group()  # Гравець
+        self.entities = pygame.sprite.Group()  # Ентіті
 
         self.inspector = Inspector()
 
@@ -49,7 +50,8 @@ class Level:
 
         # Текстура ядра 96x96 (3x3 клітинки)
         self.core_tex = self.rm.get_texture("resources/textures/tiles/core.png", (96, 96))
-
+        self.enemy_tex = self.rm.get_texture("resources/textures/enemy.png", (32, 32))
+        self.core_center_pos = (0, 0)
         self.inventory = {'iron': 0, 'copper': 0, 'coal': 0, 'copper_ingot': 0}
 
         self.build_mode = 0  # 0: Wall, 1: Miner, 2: Conveyor, 3: Furnace
@@ -71,7 +73,7 @@ class Level:
             else:
                 return None
 
-        # Генерація масивів (32x32)
+        # Генерація мапи (32x32)
         self.ground_data = [[0 for x in range(32)] for y in range(32)]
         self.ore_data = [[get_ore(randint(0, 5)) for x in range(32)] for y in range(32)]
 
@@ -90,7 +92,7 @@ class Level:
             'coal': self.rm.get_texture("resources/textures/tiles/coal_ore.png", (32, 32))
         }
 
-        # Створення тайлів (візуалізація)
+        # Створення тайлів
         for y in range(self.map_height):
             for x in range(self.map_width):
                 pos = (x * self.TILE_SIZE + self.OFFSET.x, y * self.TILE_SIZE + self.OFFSET.y)
@@ -110,7 +112,7 @@ class Level:
         # Позиція в пікселях
         core_pos_x = core_gx * self.TILE_SIZE + self.OFFSET.x
         core_pos_y = core_gy * self.TILE_SIZE + self.OFFSET.y
-
+        self.core_center_pos = (core_pos_x, core_pos_y)
         core_building = Core(
             (core_pos_x, core_pos_y),
             (core_gx, core_gy),
@@ -124,6 +126,12 @@ class Level:
                 self.world_data[(core_gx + x, core_gy + y)] = core_building
 
         print("Map loaded successfully")
+
+        self.spawnEnemy()
+
+    def spawnEnemy(self):
+        Enemy((0, 0), [self.entities], self.core_center_pos, self.enemy_tex, self)
+        Enemy((-50, -50), [self.entities], self.core_center_pos, self.enemy_tex, self)
 
     def get_grid_pos(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -154,7 +162,7 @@ class Level:
             else:
                 del self.world_data[(gx, gy)]
 
-            # Видаляємо візуально
+            # Видаляємо
             building.kill()
             print(f"Destroyed building at {gx, gy}")
 
@@ -224,7 +232,7 @@ class Level:
         # self.background.update()
         self.buildings_group.update(dt)
         self.items_group.update(dt)
-        self.entities.update()
+        self.entities.update(dt)
 
         self.background.draw(self.display_surface)  # Земля
         self.ore_group.draw(self.display_surface)  # Руда
