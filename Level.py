@@ -57,6 +57,7 @@ class Level:
             'copper_ingot': self.rm.get_texture("resources/textures/item/copper_ingot.png")
         }
 
+        # TEXTURES
         self.core_tex = self.rm.get_texture("resources/textures/tiles/core.png", (96, 96))
         self.enemy_tex = self.rm.get_texture("resources/textures/enemy.png", (32, 32))
         self.turret_tex_base = self.rm.get_texture("resources/textures/tiles/turret.png", (32, 32))
@@ -66,6 +67,16 @@ class Level:
 
         self.build_mode = 0  # 0: Wall, 1: Miner, 2: Conveyor, 3: Furnace
         self.current_rotation = 0  # 0: Right, 1: Down, 2: Left, 3: Up
+
+        # ENEMY WAVES
+        self.wave_timer = 0
+        self.time_between_waves = 30.0  # Час між хвилями
+        self.is_wave_active = False
+        self.current_wave_number = 0
+        self.spawn_grid_pos = (5, 5)
+
+        self.current_spawn_pos = (0, 0)  # Куди спавнити (знайдемо процедурно)
+
 
         # UI
         self.hover_surf = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
@@ -95,6 +106,34 @@ class Level:
 
             self.OFFSET.x += shift_x
             self.OFFSET.y += shift_y
+
+    def start_new_wave(self):
+        self.current_wave_number += 1
+        print(f"--- WAVE {self.current_wave_number} STARTED (INSTANT SPAWN) ---")
+
+
+        base_spawn_x = self.spawn_grid_pos[0] * self.TILE_SIZE
+        base_spawn_y = self.spawn_grid_pos[1] * self.TILE_SIZE
+
+        count = 3 + (self.current_wave_number * 2)
+
+        for i in range(count):
+            offset_x = randint(-40, 40)
+            offset_y = randint(-40, 40)
+
+            spawn_pos = (
+                base_spawn_x + offset_x,
+                base_spawn_y + offset_y
+            )
+
+            Enemy(spawn_pos, [self.entities], self.core_center_pos, self.enemy_tex, self)
+
+    def update_waves(self, dt):
+        self.wave_timer += dt
+
+        if self.wave_timer >= self.time_between_waves:
+            self.wave_timer = 0
+            self.start_new_wave()
 
     def load_map(self):
         self.map_width = 64  # Зробимо карту трохи більшою
@@ -131,10 +170,11 @@ class Level:
                 pos = (pos_x, pos_y)
 
                 center_x, center_y = self.map_width // 2, self.map_height // 2
-                distance = math.hypot(x - center_x, y - center_y)
+                distance_to_core = math.hypot(x - center_x, y - center_y)
+                distance_to_spawner = math.hypot(x - center_x, y - center_y)
 
                 max_dist = math.hypot(self.map_width // 2, self.map_height // 2)
-                dist_factor = distance / max_dist
+                dist_factor = distance_to_core / max_dist
 
                 final_val = terrain_val + max(dist_factor * 1.5, 0.1) - 0.5
                 if final_val > 0.35:
@@ -159,9 +199,6 @@ class Level:
                         self.ore_data[y][x] = 'coal'
                     elif ore_val < -0.4:
                         self.ore_data[y][x] = 'copper'
-
-        # --- ВІЗУАЛІЗАЦІЯ ---
-        # Тепер, коли дані заповнені, створюємо Tiles для background та ore_group
 
         ground_textures = {
             0: self.rm.get_texture("resources/textures/tiles/grass.png", (32, 32)),
@@ -301,7 +338,6 @@ class Level:
             tex = self.rm.get_texture("resources/textures/tiles/furnace.png", (32, 32))
             new_building = Furnace((pos_x, pos_y), (gx, gy), [self.buildings_group], tex, self)
         elif self.build_mode == 4:  # Turret
-            # Турель 1x1, як стіна
             new_building = Turret((pos_x, pos_y), (gx, gy), [self.buildings_group], self.turret_tex_base, self.turret_tex_turret, self)
 
         # Реєстрація будівлі
