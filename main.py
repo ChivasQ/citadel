@@ -14,7 +14,7 @@ from ResourceManager import ResourceManager
 class Game:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((800,500), RESIZABLE)
+        self.screen = pygame.display.set_mode((1280, 720), pygame.RESIZABLE)
         self.resource_manager = ResourceManager()
         self.level = Level(self.screen, self.resource_manager)
 
@@ -70,6 +70,23 @@ class Game:
 
         self.level.update(dt)
         debug_text(f'FPS: {round(self.clock.get_fps(), 1)} DT: {dt}')
+
+        debug_a = {
+            0: "Right", 1: "Down", 2: "Left", 3: "Up"
+        }
+
+        if self.level.build_mode == 0:
+            debug_text(f'selected item: Wall', 10, 100)
+        elif self.level.build_mode == 1:
+            debug_text(f'selected item: Miner', 10, 100)
+        elif self.level.build_mode == 2:
+            debug_text(f'selected item: Conveyor, rotation: {debug_a[self.level.current_rotation]}', 10, 100)
+        elif self.level.build_mode == 3:
+            debug_text(f'selected item: Furnace', 10, 100)
+        elif self.level.build_mode == 4:
+            debug_text(f'selected item: Turret', 10, 100)
+        else:
+            debug_text(f'selected item: None', 10, 100)
         renderDebugText()
         renderLines(self.level.OFFSET)
         self.end_frame()

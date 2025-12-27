@@ -8,6 +8,7 @@ import numpy as np
 from pygame.display import update
 
 from CameraGroup import CameraGroup
+from Debug import debug_text
 from Enemy import Enemy
 from Item import Item
 from Miner import Miner
@@ -47,7 +48,7 @@ class Level:
         self.map_height = 0
         self.map_width = 0
 
-        self.player = Player((100, 100), self.entities, self.rm)
+        self.player = Player((33*self.TILE_SIZE + 16, 33*self.TILE_SIZE + 16), self.entities, self.rm)
 
         self.item_textures = {
             'iron': self.rm.get_texture("resources/textures/item/raw_iron.png"),
@@ -73,6 +74,10 @@ class Level:
         self.load_map()
 
     def update_camera(self):
+        w, h = self.display_surface.get_size()
+        self.half_w = w // 2
+        self.half_h = h // 2
+
         camera_center_x = self.OFFSET.x + self.half_w
         camera_center_y = self.OFFSET.y + self.half_h
 
@@ -92,23 +97,72 @@ class Level:
             self.OFFSET.y += shift_y
 
     def load_map(self):
-        # Генерація руди
-        ores = ['coal', 'copper']
+        self.map_width = 64  # Зробимо карту трохи більшою
+        self.map_height = 64
 
-        def get_ore(i):
-            if i < len(ores):
-                return ores[i]
-            else:
-                return None
+        # Ініціалізація масивів
+        self.ground_data = [[0 for x in range(self.map_width)] for y in range(self.map_height)]
+        self.ore_data = [[None for x in range(self.map_width)] for y in range(self.map_height)]
+        self.world_data = {}  # Очищуємо світ
 
-        # Генерація мапи (32x32)
-        self.ground_data = [[0 for x in range(32)] for y in range(32)]
-        self.ore_data = [[get_ore(randint(0, 5)) for x in range(32)] for y in range(32)]
+        scale = 0.05
 
-        self.map_width = len(self.ground_data[0])
-        self.map_height = len(self.ground_data)
+        seed = random.randint(0, 100)
 
-        # Текстури
+        wall_tex = self.rm.get_texture("resources/textures/tiles/wall.png", (32, 32))
+
+        print("Generating terrain...")
+
+        for y in range(self.map_height):
+            for x in range(self.map_width):
+
+                terrain_val = noise.pnoise2(x * 0.05,
+                                            y * 0.05,
+                                            octaves=6,
+                                            persistence=0.5,
+                                            lacunarity=2.0,
+                                            repeatx=1024,
+                                            repeaty=1024,
+                                            base=seed)
+
+                # Позиція в пікселях
+                pos_x = x * self.TILE_SIZE
+                pos_y = y * self.TILE_SIZE
+                pos = (pos_x, pos_y)
+
+                center_x, center_y = self.map_width // 2, self.map_height // 2
+                distance = math.hypot(x - center_x, y - center_y)
+
+                max_dist = math.hypot(self.map_width // 2, self.map_height // 2)
+                dist_factor = distance / max_dist
+
+                final_val = terrain_val + max(dist_factor * 1.5, 0.1) - 0.5
+                if final_val > 0.35:
+
+                    self.ground_data[y][x] = 1
+
+                    new_wall = Building((pos_x, pos_y), (x, y), [self.buildings_group], wall_tex)
+                    self.world_data[(x, y)] = new_wall
+
+                else:
+                    self.ground_data[y][x] = 0
+
+                    ore_val = noise.pnoise2(x * 0.1,
+                                            y * 0.1,
+                                            octaves=6,
+                                            persistence=0.1,
+                                            lacunarity=2.0,
+                                            base=seed + 100)
+
+
+                    if ore_val > 0.4:
+                        self.ore_data[y][x] = 'coal'
+                    elif ore_val < -0.4:
+                        self.ore_data[y][x] = 'copper'
+
+        # --- ВІЗУАЛІЗАЦІЯ ---
+        # Тепер, коли дані заповнені, створюємо Tiles для background та ore_group
+
         ground_textures = {
             0: self.rm.get_texture("resources/textures/tiles/grass.png", (32, 32)),
             1: self.rm.get_texture("resources/textures/tiles/stone.png", (32, 32))
@@ -120,27 +174,42 @@ class Level:
             'coal': self.rm.get_texture("resources/textures/tiles/coal_ore.png", (32, 32))
         }
 
-        # Створення тайлів
         for y in range(self.map_height):
             for x in range(self.map_width):
                 pos = (x * self.TILE_SIZE, y * self.TILE_SIZE)
 
-                # Земля
-                ground_type = self.ground_data[y][x]
-                Tile(pos, [self.background], ground_textures[ground_type])
+                g_type = self.ground_data[y][x]
+                Tile(pos, [self.background], ground_textures[g_type])
 
-                # Руда
-                ore_type = self.ore_data[y][x]
-                if ore_type in ore_textures:
-                    Tile(pos, [self.ore_group], ore_textures[ore_type])
+                # Створення тайла руди
+                o_type = self.ore_data[y][x]
+                if o_type:
+                    Tile(pos, [self.ore_group], ore_textures[o_type])
 
-        core_gx, core_gy = 15, 15
+        found_spot = False
+        start_x, start_y = self.map_width // 2, self.map_height // 2
+
+        # Простий алгоритм: просто чистимо місце під ядро
+        core_gx, core_gy = start_x, start_y
+
         core_size = 3
+        for cy in range(core_size):
+            for cx in range(core_size):
+                tx, ty = core_gx + cx, core_gy + cy
 
-        # Позиція в пікселях
+                # Видаляємо стіну з world_data
+                if (tx, ty) in self.world_data:
+                    self.world_data[(tx, ty)].kill()  # Видаляємо спрайт
+                    del self.world_data[(tx, ty)]  # Видаляємо з даних
+
+                # Прибираємо руду
+                self.ore_data[ty][tx] = None
+
+        # Створюємо Ядро
         core_pos_x = core_gx * self.TILE_SIZE
         core_pos_y = core_gy * self.TILE_SIZE
         self.core_center_pos = (core_pos_x, core_pos_y)
+
         core_building = Core(
             (core_pos_x, core_pos_y),
             (core_gx, core_gy),
@@ -153,8 +222,7 @@ class Level:
             for x in range(core_size):
                 self.world_data[(core_gx + x, core_gy + y)] = core_building
 
-        print("Map loaded successfully")
-
+        print("Map generated procedurally!")
 
     def spawnEnemy(self):
         Enemy((-50, -50), [self.entities], self.core_center_pos, self.enemy_tex, self)
@@ -228,6 +296,7 @@ class Level:
                 self.current_rotation,
                 self
             )
+
         elif self.build_mode == 3:  # Furnace
             tex = self.rm.get_texture("resources/textures/tiles/furnace.png", (32, 32))
             new_building = Furnace((pos_x, pos_y), (gx, gy), [self.buildings_group], tex, self)
