@@ -1,6 +1,6 @@
 import pygame.sprite
 
-from Debug import debug_text
+from Debug import addDebugText
 
 
 class Player(pygame.sprite.Sprite):
@@ -47,8 +47,8 @@ class Player(pygame.sprite.Sprite):
 
         self.pos += self.direction * self.speed * dt
         self.rect.center = self.pos
-        debug_text(f'DIR:{self.direction}', 10, 40)
-        debug_text(f'POS:{self.pos}', 10, 70)
+        addDebugText(f'DIR:{self.direction}', 10, 40)
+        addDebugText(f'POS:{self.pos}', 10, 70)
 
     def tick(self, dt):
         self.input()

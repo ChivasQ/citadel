@@ -10,7 +10,7 @@ from Building import Building
 from CameraGroup import CameraGroup
 from Conveyor import Conveyor
 from Core import Core
-from Debug import debug_text
+from Debug import addDebugText
 from Enemy import Enemy
 from Furnace import Furnace
 from Inspector import Inspector
@@ -129,7 +129,7 @@ class Level:
 
     def update_waves(self, dt):
         self.wave_timer += dt
-        debug_text(int(self.wave_timer), y=150)
+        addDebugText(int(self.wave_timer), y=150)
         if self.wave_timer >= self.time_between_waves:
             self.wave_timer = 0
             self.start_new_wave()

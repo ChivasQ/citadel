@@ -1,7 +1,7 @@
 import pygame
 
 import Debug
-from Debug import debug_text, renderLines
+from Debug import addDebugText, renderLines
 from Debug import renderDebugText
 from Level import Level
 from ResourceManager import ResourceManager
@@ -101,24 +101,24 @@ class Game:
         self.start_frame()
 
         self.level.update(dt)
-        debug_text(f'FPS: {round(self.clock.get_fps(), 1)} DT: {dt}')
+        addDebugText(f'FPS: {round(self.clock.get_fps(), 1)} DT: {dt}')
 
         debug_a = {
             0: "Right", 1: "Down", 2: "Left", 3: "Up"
         }
 
         if self.level.build_mode == 0:
-            debug_text(f'selected item: Wall', 10, 100)
+            addDebugText(f'selected item: Wall', 10, 100)
         elif self.level.build_mode == 1:
-            debug_text(f'selected item: Miner', 10, 100)
+            addDebugText(f'selected item: Miner', 10, 100)
         elif self.level.build_mode == 2:
-            debug_text(f'selected item: Conveyor, rotation: {debug_a[self.level.current_rotation]}', 10, 100)
+            addDebugText(f'selected item: Conveyor, rotation: {debug_a[self.level.current_rotation]}', 10, 100)
         elif self.level.build_mode == 3:
-            debug_text(f'selected item: Furnace', 10, 100)
+            addDebugText(f'selected item: Furnace', 10, 100)
         elif self.level.build_mode == 4:
-            debug_text(f'selected item: Turret', 10, 100)
+            addDebugText(f'selected item: Turret', 10, 100)
         else:
-            debug_text(f'selected item: None', 10, 100)
+            addDebugText(f'selected item: None', 10, 100)
 
         if self.is_dragging and self.drag_start_pos:
             curr_gx, curr_gy = self.level.get_grid_pos()
@@ -140,7 +140,7 @@ class Game:
             x2 = target_gx * self.level.TILE_SIZE + 16
             y2 = target_gy * self.level.TILE_SIZE + 16
             self.axis_drag_end_pos = (x2, y2)
-            Debug.addLine(x1, y1, x2, y2)
+            Debug.addDebugLine(x1, y1, x2, y2)
 
         self.end_frame()
 

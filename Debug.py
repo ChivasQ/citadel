@@ -5,7 +5,7 @@ font = pygame.font.Font("resources/fonts/PressStart2P-Regular.ttf", 20)
 text = []
 lines = []
 
-def debug_text(info, x = 10, y = 10):
+def addDebugText(info, x = 10, y = 10):
     text.append((info, x, y))
 
 def renderDebugText():
@@ -39,5 +39,5 @@ def renderLines(camera_offset):
     lines = remaining_lines
 
 
-def addLine(x1, y1, x2, y2, lifetime = 1):
+def addDebugLine(x1, y1, x2, y2, lifetime = 1):
     lines.append((x1, y1, x2, y2, 1)) # 1 це життя ціеї лінії

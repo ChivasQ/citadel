@@ -1,6 +1,6 @@
 import pygame
 
-from Debug import addLine
+from Debug import addDebugLine
 from Pathfinding import Pathfinding
 
 
@@ -182,7 +182,7 @@ class Enemy(pygame.sprite.Sprite):
             target_x = node[0] * tile_size + half_tile
             target_y = node[1] * tile_size + half_tile
             end_point = (target_x, target_y)
-            addLine(start_point[0], start_point[1], end_point[0], end_point[1], 1)
+            addDebugLine(start_point[0], start_point[1], end_point[0], end_point[1], 1)
             start_point = end_point
 
     def update(self, dt):
