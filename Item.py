@@ -16,3 +16,5 @@ class Item(pygame.sprite.Sprite):
         if isinstance(other, Item):
             return self.item_type == other.item_type
         return False
+    #fix crash
+    __hash__ = pygame.sprite.Sprite.__hash__
