@@ -47,12 +47,12 @@ class Enemy(pygame.sprite.Sprite):
 
         for building in self.level.buildings_group:
             if building.__class__.__name__ == 'Turret':
+                if building.ammo > 0:
+                    dist = self.pos.distance_to(pygame.math.Vector2(building.rect.center))
 
-                dist = self.pos.distance_to(pygame.math.Vector2(building.rect.center))
-
-                if dist < min_dist:
-                    min_dist = dist
-                    closest_turret = building
+                    if dist < min_dist:
+                        min_dist = dist
+                        closest_turret = building
 
         if closest_turret:
             # Йдемо до турелі
@@ -149,7 +149,7 @@ class Enemy(pygame.sprite.Sprite):
 
             if hasattr(self.target_building, 'health'):
                 self.target_building.health -= self.damage
-                print(f"Enemy hit building! HP: {self.target_building.health}")
+                # print(f"Enemy hit building! HP: {self.target_building.health}")
 
                 if self.target_building.health <= 0:
                     self.target_building.kill()

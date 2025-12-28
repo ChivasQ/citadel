@@ -1,5 +1,6 @@
 import math
 import random
+import sys
 from random import randint
 
 import noise
@@ -54,7 +55,7 @@ class Level:
             'coal': self.rm.get_texture("resources/textures/item/coal.png"),
             'copper_ingot': self.rm.get_texture("resources/textures/item/copper_ingot.png")
         }
-
+        self.core = None
         # TEXTURES
         self.core_tex = self.rm.get_texture("resources/textures/tiles/core.png", (96, 96))
         self.enemy_tex = self.rm.get_texture("resources/textures/enemy.png", (32, 32))
@@ -243,7 +244,7 @@ class Level:
         core_pos_y = core_gy * self.TILE_SIZE
         self.core_center_pos = (core_pos_x, core_pos_y)
 
-        core_building = Core(
+        self.core = Core(
             (core_pos_x, core_pos_y),
             (core_gx, core_gy),
             [self.buildings_group],
@@ -253,7 +254,7 @@ class Level:
 
         for y in range(core_size):
             for x in range(core_size):
-                self.world_data[(core_gx + x, core_gy + y)] = core_building
+                self.world_data[(core_gx + x, core_gy + y)] = self.core
 
         print("Map generated procedurally!")
 
@@ -383,3 +384,9 @@ class Level:
         self.entities.custom_draw(self.OFFSET)  # Гравець
 
         self.draw_hover()  # Курсор
+
+        if self.core is not None:
+            if self.core.health <= 0:
+                print("GAME OVER: Core Destroyed!")
+                pygame.quit()
+                sys.exit()
