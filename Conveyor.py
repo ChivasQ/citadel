@@ -1,4 +1,5 @@
 import pygame
+
 from Building import Building
 
 VECS = [pygame.math.Vector2(1, 0), pygame.math.Vector2(0, 1),

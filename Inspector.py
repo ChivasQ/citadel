@@ -32,10 +32,9 @@ class Inspector:
         x += 20
         y += 20
 
-        # Перевірка, чи не вилазить за екран (спрощено)
         screen_w, screen_h = surface.get_size()
         if x + box_width > screen_w:
-            x -= box_width + 40  # Показувати зліва від курсора
+            x -= box_width + 40
         if y + box_height > screen_h:
             y -= box_height + 40
 

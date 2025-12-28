@@ -1,4 +1,3 @@
-import pygame
 from Building import Building
 from Item import Item
 
@@ -12,7 +11,7 @@ class Miner(Building):
         self.mining_speed = 1.0  # 1 предмет в секунду
         self.timer = 0
 
-        # Прапорець, чи заблокований
+        # чи заблокований
         self.output_blocked = False
 
     def update(self, dt):
@@ -20,19 +19,17 @@ class Miner(Building):
         if not self.ore_type:
             return
 
-        # Логіка таймера
         if not self.output_blocked:
             self.timer += dt
 
         # Коли час вийшов, пробуємо вивантажити ресурс
         if self.timer >= 1.0 / self.mining_speed:
             if self.try_output():
-                # Якщо успішно вивантажили або створили предмет -> скидаємо таймер
                 self.timer = 0
                 self.output_blocked = False
                 print(f"Miner at {self.grid_pos} produced {self.ore_type}")
             else:
-                # Якщо нікуди діти -> блокуємося і чекаємо звільнення місця
+                # блокуємося і чекаємо звільнення місця
                 self.output_blocked = True
 
     def try_output(self):

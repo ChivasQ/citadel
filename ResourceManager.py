@@ -1,5 +1,7 @@
-import pygame
 import os
+
+import pygame
+
 
 class ResourceManager:
     def __init__(self):

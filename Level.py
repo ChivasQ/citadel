@@ -2,23 +2,21 @@ import math
 import random
 from random import randint
 
-import pygame
 import noise
-import numpy as np
-from pygame.display import update
+import pygame
 
+from Building import Building
 from CameraGroup import CameraGroup
+from Conveyor import Conveyor
+from Core import Core
 from Debug import debug_text
 from Enemy import Enemy
+from Furnace import Furnace
+from Inspector import Inspector
 from Item import Item
 from Miner import Miner
 from Player import Player
 from Tile import Tile
-from Building import Building
-from Conveyor import Conveyor
-from Furnace import Furnace
-from Inspector import Inspector
-from Core import Core
 from Turret import Turret
 
 
@@ -70,14 +68,14 @@ class Level:
 
         # ENEMY WAVES
         self.wave_timer = 0
-        self.time_between_waves = 30.0  # Час між хвилями
+        self.time_between_waves = 300.0  # Час між хвилями
         self.is_wave_active = False
         self.current_wave_number = 0
         self.spawn_grid_pos = (5, 5)
 
-        self.current_spawn_pos = (0, 0)  # Куди спавнити (знайдемо процедурно)
+        self.current_spawn_pos = (0, 0)  # Куди спавнити
 
-
+        self.enemy_logic_tick = True
         # UI
         self.hover_surf = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
         pygame.draw.rect(self.hover_surf, (255, 255, 255, 100), (0, 0, self.TILE_SIZE, self.TILE_SIZE), 2)
@@ -109,7 +107,7 @@ class Level:
 
     def start_new_wave(self):
         self.current_wave_number += 1
-        print(f"--- WAVE {self.current_wave_number} STARTED (INSTANT SPAWN) ---")
+        print(f"--- WAVE {self.current_wave_number} ---")
 
 
         base_spawn_x = self.spawn_grid_pos[0] * self.TILE_SIZE
@@ -118,8 +116,8 @@ class Level:
         count = 3 + (self.current_wave_number * 2)
 
         for i in range(count):
-            offset_x = randint(-40, 40)
-            offset_y = randint(-40, 40)
+            offset_x = randint(-160, 160)
+            offset_y = randint(-160, 160)
 
             spawn_pos = (
                 base_spawn_x + offset_x,
@@ -130,13 +128,13 @@ class Level:
 
     def update_waves(self, dt):
         self.wave_timer += dt
-
+        debug_text(int(self.wave_timer), y=150)
         if self.wave_timer >= self.time_between_waves:
             self.wave_timer = 0
             self.start_new_wave()
 
     def load_map(self):
-        self.map_width = 64  # Зробимо карту трохи більшою
+        self.map_width = 64
         self.map_height = 64
 
         # Ініціалізація масивів
@@ -146,9 +144,9 @@ class Level:
 
         scale = 0.05
 
-        seed = random.randint(0, 100)
+        seed = random.randint(0, 200)
 
-        wall_tex = self.rm.get_texture("resources/textures/tiles/wall.png", (32, 32))
+        wall_tex = self.rm.get_texture("resources/textures/tiles/cobblestone.png", (32, 32))
 
         print("Generating terrain...")
 
@@ -160,8 +158,6 @@ class Level:
                                             octaves=6,
                                             persistence=0.5,
                                             lacunarity=2.0,
-                                            repeatx=1024,
-                                            repeaty=1024,
                                             base=seed)
 
                 # Позиція в пікселях
@@ -171,33 +167,33 @@ class Level:
 
                 center_x, center_y = self.map_width // 2, self.map_height // 2
                 distance_to_core = math.hypot(x - center_x, y - center_y)
-                distance_to_spawner = math.hypot(x - center_x, y - center_y)
+                distance_to_spawner = math.hypot((x-y)/2 - 5, (y-x)/2 - 5)*2
 
-                max_dist = math.hypot(self.map_width // 2, self.map_height // 2)
-                dist_factor = distance_to_core / max_dist
+                max_dist = math.hypot(center_x, center_y)
+                dist_factor = min(distance_to_core, distance_to_spawner) / max_dist
 
-                final_val = terrain_val + max(dist_factor * 1.5, 0.1) - 0.5
-                if final_val > 0.35:
+                final_val = terrain_val + min(dist_factor * 1.5, 1) - 0.5
+                if final_val > 0.25:
 
                     self.ground_data[y][x] = 1
 
-                    new_wall = Building((pos_x, pos_y), (x, y), [self.buildings_group], wall_tex)
+                    new_wall = Building((pos_x, pos_y), (x, y), [self.buildings_group], wall_tex, health=250)
                     self.world_data[(x, y)] = new_wall
 
                 else:
                     self.ground_data[y][x] = 0
 
-                    ore_val = noise.pnoise2(x * 0.1,
-                                            y * 0.1,
+                    ore_val = noise.pnoise2(x * 0.2,
+                                            y * 0.2,
                                             octaves=6,
                                             persistence=0.1,
-                                            lacunarity=2.0,
+                                            lacunarity=6.0,
                                             base=seed + 100)
 
 
-                    if ore_val > 0.4:
+                    if ore_val > 0.25:
                         self.ore_data[y][x] = 'coal'
-                    elif ore_val < -0.4:
+                    elif ore_val < -0.30:
                         self.ore_data[y][x] = 'copper'
 
         ground_textures = {
@@ -226,7 +222,7 @@ class Level:
         found_spot = False
         start_x, start_y = self.map_width // 2, self.map_height // 2
 
-        # Простий алгоритм: просто чистимо місце під ядро
+        # просто чистимо місце під ядро
         core_gx, core_gy = start_x, start_y
 
         core_size = 3
@@ -299,8 +295,11 @@ class Level:
             building.kill()
             print(f"Destroyed building at {gx, gy}")
 
-    def place_building(self):
-        gx, gy = self.get_grid_pos()
+    def place_building(self, override_pos=None, override_rot=None):
+        if override_pos is None:
+            gx, gy = self.get_grid_pos()
+        else:
+            gx, gy = override_pos
 
         if not (0 <= gx < self.map_width and 0 <= gy < self.map_height):
             return
@@ -326,11 +325,17 @@ class Level:
         elif self.build_mode == 2:  # Conveyor
             tex = self.rm.get_texture("resources/textures/tiles/basic_conveyor.png", (32, 32))
             # Передаємо напрямок і self
+            rot = None
+            if override_rot is None:
+                rot = self.current_rotation
+            else:
+                rot = override_rot
+
             new_building = Conveyor(
                 (pos_x, pos_y), (gx, gy),
                 [self.buildings_group],
                 tex,
-                self.current_rotation,
+                rot,
                 self
             )
 
@@ -368,7 +373,7 @@ class Level:
         self.buildings_group.update(dt)
         self.items_group.update(dt)
         self.entities.update(dt)
-
+        self.update_waves(dt)
         self.update_camera()
 
         self.background.custom_draw(self.OFFSET)  # Земля

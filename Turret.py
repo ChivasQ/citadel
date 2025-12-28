@@ -1,7 +1,10 @@
-import pygame
 import math
+
+import pygame
+
 from Building import Building
 from Bullet import Bullet
+
 
 class Turret(Building):
     def __init__(self, pos, grid_pos, groups, image, rotating_image, level_ref):

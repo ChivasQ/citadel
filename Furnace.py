@@ -1,4 +1,3 @@
-import pygame
 from Building import Building
 from Item import Item
 

@@ -1,10 +1,6 @@
 import pygame
-from pygame import RESIZABLE
-from pygame.locals import DOUBLEBUF, OPENGL
-import imgui
-from imgui.integrations.pygame import PygameRenderer
-from OpenGL.GL import *
 
+import Debug
 from Debug import debug_text, renderLines
 from Debug import renderDebugText
 from Level import Level
@@ -17,6 +13,10 @@ class Game:
         self.screen = pygame.display.set_mode((1280, 720), pygame.RESIZABLE)
         self.resource_manager = ResourceManager()
         self.level = Level(self.screen, self.resource_manager)
+
+        self.is_dragging = False
+        self.drag_start_pos = None
+        self.axis_drag_end_pos = None
 
         pygame.display.set_caption("game")
         self.clock = pygame.time.Clock()
@@ -33,11 +33,42 @@ class Game:
                     pygame.quit()
                     isRunning = False
                     self.close()
+
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:  # 1 - left button
-                        self.level.place_building()
+                    if event.button == 1:  # ЛКМ
+                        gx, gy = self.level.get_grid_pos()
+                        self.drag_start_pos = (gx, gy)
+                        self.is_dragging = True
+
                     if event.button == pygame.BUTTON_RIGHT:
                         self.level.destroy_building()
+                if event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1 and self.is_dragging:
+                        curr_gx, curr_gy = self.level.get_grid_pos()
+                        start_gx, start_gy = self.drag_start_pos
+
+                        dx = curr_gx - start_gx
+                        dy = curr_gy - start_gy
+
+                        if abs(dx) > abs(dy):
+                            rotation = 0 if dx > 0 else 2
+
+                            step = 1 if dx >= 0 else -1
+
+                            for x in range(start_gx, curr_gx + step, step):
+                                self.level.place_building((x, start_gy), rotation)
+
+                        else:
+                            rotation = 1 if dy > 0 else 3
+
+                            step = 1 if dy >= 0 else -1
+
+                            for y in range(start_gy, curr_gy + step, step):
+                                self.level.place_building((start_gx, y), rotation)
+
+                        self.is_dragging = False
+                        self.drag_start_pos = None
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_1: self.level.build_mode = 0  # Wall
                     if event.key == pygame.K_2: self.level.build_mode = 1  # Miner
@@ -46,15 +77,14 @@ class Game:
                     if event.key == pygame.K_5: self.level.build_mode = 4  # Turret
 
                     if event.key == pygame.K_p: self.level.spawnEnemy()
-
+                    if event.key == pygame.K_l:
+                        self.level.wave_timer = self.level.time_between_waves
                     if event.key == pygame.K_r:  # Rotate
                         self.level.rotate_building()
 
+
             self.update(dt)
             dt = self.clock.tick(0) / 1000
-
-
-
 
 
 
@@ -62,6 +92,8 @@ class Game:
         self.screen.fill("blue")
 
     def end_frame(self):
+        renderDebugText()
+        renderLines(self.level.OFFSET)
         pygame.display.update()
 
 
@@ -87,10 +119,30 @@ class Game:
             debug_text(f'selected item: Turret', 10, 100)
         else:
             debug_text(f'selected item: None', 10, 100)
-        renderDebugText()
-        renderLines(self.level.OFFSET)
-        self.end_frame()
 
+        if self.is_dragging and self.drag_start_pos:
+            curr_gx, curr_gy = self.level.get_grid_pos()
+            start_gx, start_gy = self.drag_start_pos
+
+            dx = abs(curr_gx - start_gx)
+            dy = abs(curr_gy - start_gy)
+
+            target_gx, target_gy = curr_gx, curr_gy
+
+            if dx > dy:
+                target_gy = start_gy
+            else:
+                target_gx = start_gx
+
+            x1 = start_gx * self.level.TILE_SIZE + 16
+            y1 = start_gy * self.level.TILE_SIZE + 16
+
+            x2 = target_gx * self.level.TILE_SIZE + 16
+            y2 = target_gy * self.level.TILE_SIZE + 16
+            self.axis_drag_end_pos = (x2, y2)
+            Debug.addLine(x1, y1, x2, y2)
+
+        self.end_frame()
 
 
 if __name__ == "__main__":
