@@ -11,3 +11,8 @@ class Item(pygame.sprite.Sprite):
 
     def update(self, dt):
         self.rect.center = self.pos
+
+    def __eq__(self, other):
+        if isinstance(other, Item):
+            return self.item_type == other.item_type
+        return False

@@ -390,3 +390,9 @@ class Level:
                 print("GAME OVER: Core Destroyed!")
                 pygame.quit()
                 sys.exit()
+
+    def __getitem__(self, pos):
+        return self.world_data.get(pos)
+
+    def __len__(self):
+        return len(self.world_data)

@@ -196,3 +196,9 @@ class Enemy(pygame.sprite.Sprite):
             self.move(dt)
 
         self.draw_path()
+
+    def __str__(self):
+        return f"Enemy [HP: {self.health}, Pos: ({int(self.pos.x)}, {int(self.pos.y)})]"
+
+    def __repr__(self):
+        return self.__str__()
